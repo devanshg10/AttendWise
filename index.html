@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AttendWise — Smart Attendance & Bunk Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22 4 12 14.01 9 11.01'></polyline></svg>">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+  <!-- App Container -->
+  <div class="app-layout">
+    <!-- Sidebar Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <i data-lucide="calculator"></i>
+          </div>
+          <div class="logo-text">
+            <h2>Attend<span>Wise</span></h2>
+            <span class="badge badge-accent">Smart Tracker</span>
+          </div>
+        </div>
+        <button class="btn-icon mobile-close-btn" id="closeSidebarBtn" aria-label="Close navigation sidebar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main Menu</div>
+        <a href="#dashboard" class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#subjects" class="nav-item" data-view="subjects">
+          <i data-lucide="book-open"></i>
+          <span>Subjects</span>
+          <span class="nav-badge" id="navSubjectCount">0</span>
+        </a>
+        <a href="#calculator" class="nav-item" data-view="calculator">
+          <i data-lucide="calculator"></i>
+          <span>Bunk Calculator</span>
+        </a>
+        <a href="#activity" class="nav-item" data-view="activity">
+          <i data-lucide="history"></i>
+          <span>Activity Log</span>
+        </a>
+
+        <div class="nav-section-label">Data & Settings</div>
+        <a href="#settings" class="nav-item" data-view="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings & Backup</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer / Quick Target -->
+      <div class="sidebar-footer">
+        <div class="quick-target-card">
+          <div class="quick-target-header">
+            <span class="text-muted"><i data-lucide="target" class="icon-inline"></i> Global Target</span>
+            <span class="fw-bold" id="sidebarTargetValue">75%</span>
+          </div>
+          <input type="range" min="50" max="95" step="1" value="75" id="globalTargetRange" class="slider-target" title="Adjust default attendance target">
+          <div class="slider-labels">
+            <span>50%</span>
+            <span>75%</span>
+            <span>95%</span>
+          </div>
+        </div>
+
+        <div class="user-quick-profile">
+          <div class="status-indicator"></div>
+          <div class="profile-info">
+            <span class="profile-title">Attendance Status</span>
+            <span class="profile-subtitle" id="sidebarOverallStatus">Calculating...</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-icon mobile-toggle-btn" id="openSidebarBtn" aria-label="Open navigation sidebar">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="page-title-group">
+            <h1 id="pageTitle">Dashboard Overview</h1>
+            <p id="pageSubtitle" class="text-muted">Monitor your attendance health and bunk margins</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Global Search trigger or shortcut -->
+          <button class="btn btn-secondary btn-sm" id="quickAddSubjectBtn">
+            <i data-lucide="plus"></i>
+            <span>Add Subject</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="btn-icon theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle light or dark theme" title="Toggle theme">
+            <i data-lucide="moon" id="themeIcon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Scrollable Body -->
+      <div class="content-body">
+        
+        <!-- ================= VIEW 1: DASHBOARD ================= -->
+        <section id="viewDashboard" class="view-panel active">
+          <!-- Quick Stat KPI Cards -->
+          <div class="stats-grid">
+            <div class="stat-card" id="kpiOverallCard">
+              <div class="stat-header">
+                <span class="stat-title">Overall Attendance</span>
+                <span class="stat-icon-wrapper indigo"><i data-lucide="percent"></i></span>
+              </div>
+              <div class="stat-body">
+                <h2 class="stat-value" id="kpiOverallPercentage">0.0%</h2>
+                <div class="stat-badge" id="kpiOverallBadge">No Data</div>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="kpiOverallBar" style="width: 0%"></div>
+              </div>
+              <p class="stat-footnote" id="kpiTargetFootnote">Target: 75%</p>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Classes Attended</span>
+                <span class="stat-icon-wrapper emerald"><i data-lucide="check-circle-2"></i></span>
+              </div>
+              <div class="stat-body">
+                <h2 class="stat-value" id="kpiAttendedClasses">0</h2>
+                <span class="stat-subtext" id="kpiAttendedSubtext">out of 0 held</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill emerald-fill" id="kpiAttendedBar" style="width: 0%"></div>
+              </div>
+              <p class="stat-footnote text-emerald" id="kpiAttendedSummary">Regular attendance</p>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Classes Missed</span>
+                <span class="stat-icon-wrapper rose"><i data-lucide="x-circle"></i></span>
+              </div>
+              <div class="stat-body">
+                <h2 class="stat-value" id="kpiMissedClasses">0</h2>
+                <span class="stat-subtext" id="kpiBunkCount">absences</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill rose-fill" id="kpiMissedBar" style="width: 0%"></div>
+              </div>
+              <p class="stat-footnote" id="kpiMissedSummary">Missed classes</p>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Subject Health</span>
+                <span class="stat-icon-wrapper amber"><i data-lucide="alert-triangle"></i></span>
+              </div>
+              <div class="stat-body">
+                <h2 class="stat-value" id="kpiCriticalCount">0</h2>
+                <span class="stat-subtext">subjects at risk</span>
+              </div>
+              <div class="status-pill-row" id="kpiHealthPills">
+                <span class="mini-pill safe" id="pillSafeCount">0 Safe</span>
+                <span class="mini-pill warning" id="pillWarningCount">0 Warning</span>
+                <span class="mini-pill critical" id="pillCriticalCount">0 Below</span>
+              </div>
+              <p class="stat-footnote text-muted" id="kpiTotalSubjectsCount">Total 0 subjects</p>
+            </div>
+          </div>
+
+          <!-- Alert Banner for Subjects Below Target -->
+          <div class="critical-alert-box d-none" id="criticalAlertBox">
+            <div class="alert-icon-wrap">
+              <i data-lucide="alert-octagon"></i>
+            </div>
+            <div class="alert-content">
+              <h4>Attendance Warning!</h4>
+              <p id="criticalAlertMessage">You have subjects falling behind your target. Take action to recover attendance.</p>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" id="viewCriticalSubjectsBtn">Review Subjects</button>
+          </div>
+
+          <!-- Analytics Charts & Overview Cards -->
+          <div class="dashboard-analytics-grid">
+            <!-- Subject Attendance Chart -->
+            <div class="content-card chart-card">
+              <div class="card-header">
+                <div class="card-title-wrap">
+                  <h3 class="card-title">Subject Attendance Comparison</h3>
+                  <p class="card-subtitle">Visual breakdown of your current attendance vs target</p>
+                </div>
+                <div class="card-actions">
+                  <span class="badge badge-indigo" id="chartTargetBadge">Target: 75%</span>
+                </div>
+              </div>
+              <div class="card-body chart-wrapper">
+                <canvas id="attendanceBarChart"></canvas>
+                <div class="chart-empty-state d-none" id="chartEmptyState">
+                  <i data-lucide="bar-chart-2"></i>
+                  <p>Add subjects to visualize attendance distribution</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Bunk Status Summary -->
+            <div class="content-card summary-card">
+              <div class="card-header">
+                <div class="card-title-wrap">
+                  <h3 class="card-title">Bunk Cushion & Recovery</h3>
+                  <p class="card-subtitle">Calculated buffer based on current numbers</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="bunk-summary-list" id="bunkSummaryList">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Subject Cards Section -->
+          <div class="section-header mt-lg">
+            <div class="section-title-wrap">
+              <h2 class="section-title">Enrolled Subjects</h2>
+              <p class="section-subtitle">Quickly log today's classes with one click</p>
+            </div>
+            <div class="section-actions">
+              <button class="btn btn-outline btn-sm" id="goToSubjectManagementBtn">
+                <i data-lucide="sliders-horizontal"></i>
+                <span>Manage All</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Subject Cards Grid (Quick tracker) -->
+          <div class="subject-cards-grid" id="dashboardSubjectCards">
+            <!-- Dynamic subject cards rendered here -->
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 2: SUBJECTS MANAGEMENT ================= -->
+        <section id="viewSubjects" class="view-panel">
+          <!-- Control Bar: Search, Filters, Sorting, Add Button -->
+          <div class="filters-card">
+            <div class="search-input-wrap">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="subjectSearchInput" placeholder="Search subjects, faculty..." class="form-control form-control-search">
+              <button class="clear-search-btn d-none" id="clearSearchBtn" aria-label="Clear search">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+
+            <div class="filters-group">
+              <div class="filter-item">
+                <label for="statusFilterSelect">Status</label>
+                <select id="statusFilterSelect" class="form-select">
+                  <option value="all">All Statuses</option>
+                  <option value="safe">Safe (On Track)</option>
+                  <option value="warning">At Risk (Borderline)</option>
+                  <option value="critical">Below Target</option>
+                </select>
+              </div>
+
+              <div class="filter-item">
+                <label for="sortBySelect">Sort By</label>
+                <select id="sortBySelect" class="form-select">
+                  <option value="name_asc">Name (A-Z)</option>
+                  <option value="name_desc">Name (Z-A)</option>
+                  <option value="percentage_asc">Attendance (Lowest First)</option>
+                  <option value="percentage_desc">Attendance (Highest First)</option>
+                  <option value="classes_desc">Most Classes</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary" id="openAddSubjectModalBtn">
+                <i data-lucide="plus"></i>
+                <span>Add New Subject</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Subjects Table / Card Container -->
+          <div class="subjects-container" id="subjectsContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 3: BUNK CALCULATOR ================= -->
+        <section id="viewCalculator" class="view-panel">
+          <div class="calc-hero-card">
+            <div class="calc-hero-content">
+              <div class="calc-badge"><i data-lucide="sparkles"></i> Mathematical Precision</div>
+              <h2>Smart Bunk & Catch-up Forecaster</h2>
+              <p>Predict your future attendance, calculate safe bunks without dropping below your target, or determine exactly how many consecutive classes you must attend to recover.</p>
+            </div>
+            <div class="calc-formula-card">
+              <h4>The Mathematics</h4>
+              <div class="formula-line">
+                <span class="formula-label">Permissible Bunks:</span>
+                <code>floor(Attended / Target - Total)</code>
+              </div>
+              <div class="formula-line">
+                <span class="formula-label">Required Catch-up:</span>
+                <code>ceil((Target × Total - Attended) / (1 - Target))</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Calculator Tool -->
+          <div class="interactive-calc-layout">
+            <div class="content-card calc-form-card">
+              <div class="card-header">
+                <h3 class="card-title">Custom What-If Simulator</h3>
+                <p class="card-subtitle">Simulate scenarios for any subject or hypothetical classes</p>
+              </div>
+              <div class="card-body">
+                <form id="simulatorForm">
+                  <div class="form-group mb-md">
+                    <label for="simSubjectSelect" class="form-label">Preload from Enrolled Subject (Optional)</label>
+                    <select id="simSubjectSelect" class="form-select">
+                      <option value="">-- Choose subject to load values --</option>
+                    </select>
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label for="simAttended" class="form-label">Classes Attended <span class="text-danger">*</span></label>
+                      <input type="number" id="simAttended" class="form-control" min="0" value="18" placeholder="e.g. 18" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="simTotal" class="form-label">Total Classes Held <span class="text-danger">*</span></label>
+                      <input type="number" id="simTotal" class="form-control" min="0" value="22" placeholder="e.g. 22" required>
+                    </div>
+                  </div>
+
+                  <div class="form-group mt-md">
+                    <div class="label-with-val">
+                      <label for="simTarget" class="form-label">Required Target Percentage</label>
+                      <span class="val-pill" id="simTargetDisplay">75%</span>
+                    </div>
+                    <input type="range" id="simTarget" class="slider-target" min="50" max="95" step="1" value="75">
+                  </div>
+
+                  <div class="sim-actions mt-lg">
+                    <button type="button" class="btn btn-primary w-100" id="runSimulationBtn">
+                      <i data-lucide="play"></i>
+                      <span>Calculate Simulation</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Simulation Result Card -->
+            <div class="content-card calc-result-card" id="calcResultDisplay">
+              <div class="card-header">
+                <h3 class="card-title">Forecast Output</h3>
+                <span class="badge" id="simStatusBadge">Simulation Ready</span>
+              </div>
+              <div class="card-body" id="simResultContainer">
+                <div class="sim-score-ring-wrap">
+                  <div class="circular-progress-wrap">
+                    <svg class="progress-ring" width="140" height="140">
+                      <circle class="progress-ring-circle-bg" stroke-width="10" cx="70" cy="70" r="58" />
+                      <circle class="progress-ring-circle-val" id="simProgressCircle" stroke-width="10" cx="70" cy="70" r="58" />
+                    </svg>
+                    <div class="ring-text">
+                      <span class="ring-percentage" id="simPercentageVal">0%</span>
+                      <span class="ring-label">Current</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sim-verdict-box" id="simVerdictBox">
+                  <h4 id="simVerdictTitle">Analysis Pending</h4>
+                  <p id="simVerdictDescription">Adjust inputs on the left to compute safe bunk limits and recovery paths.</p>
+                </div>
+
+                <div class="sim-kpis">
+                  <div class="sim-kpi-item">
+                    <span class="sim-kpi-title">Safe Bunk Margin</span>
+                    <span class="sim-kpi-value text-emerald" id="simBunkMargin">0 classes</span>
+                    <span class="sim-kpi-note" id="simBunkNote">Can skip safely</span>
+                  </div>
+                  <div class="sim-kpi-item">
+                    <span class="sim-kpi-title">Required Catch-up</span>
+                    <span class="sim-kpi-value text-amber" id="simCatchupRequired">0 classes</span>
+                    <span class="sim-kpi-note" id="simCatchupNote">Consecutive attendance needed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- All Subjects Bunk Breakdown Table -->
+          <div class="content-card mt-xl">
+            <div class="card-header">
+              <div class="card-title-wrap">
+                <h3 class="card-title">Comprehensive Subject-by-Subject Bunk Matrix</h3>
+                <p class="card-subtitle">Instant breakdown across every active course</p>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Subject</th>
+                      <th>Attended / Total</th>
+                      <th>Current %</th>
+                      <th>Target</th>
+                      <th>Permissible Bunks</th>
+                      <th>Recovery Needed</th>
+                      <th>Action Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bunkMatrixTableBody">
+                    <!-- Dynamic Matrix Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 4: ACTIVITY LOG ================= -->
+        <section id="viewActivity" class="view-panel">
+          <div class="content-card">
+            <div class="card-header">
+              <div class="card-title-wrap">
+                <h3 class="card-title">Attendance History & Audit Log</h3>
+                <p class="card-subtitle">Real-time chronicle of marked attendances, changes, and updates</p>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-outline btn-sm" id="clearActivityLogBtn">
+                  <i data-lucide="trash-2"></i>
+                  <span>Clear History</span>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="timeline" id="activityTimeline">
+                <!-- Timeline items rendered here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 5: SETTINGS & BACKUP ================= -->
+        <section id="viewSettings" class="view-panel">
+          <div class="settings-grid">
+            <!-- Attendance Preferences -->
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-title-wrap">
+                  <h3 class="card-title"><i data-lucide="sliders" class="icon-inline"></i> Global Attendance Preferences</h3>
+                  <p class="card-subtitle">Define target thresholds applied to new subjects</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-group mb-lg">
+                  <label for="settingsGlobalTargetInput" class="form-label">Default Target Attendance Percentage</label>
+                  <div class="input-unit-group">
+                    <input type="number" id="settingsGlobalTargetInput" class="form-control" min="50" max="95" value="75">
+                    <span class="unit-text">%</span>
+                  </div>
+                  <span class="form-hint">Standard university guidelines usually mandate 75% or 80%.</span>
+                </div>
+
+                <div class="form-group mb-lg">
+                  <label for="settingsRiskThresholdInput" class="form-label">At-Risk Warning Threshold Buffer</label>
+                  <div class="input-unit-group">
+                    <input type="number" id="settingsRiskThresholdInput" class="form-control" min="1" max="10" value="5">
+                    <span class="unit-text">%</span>
+                  </div>
+                  <span class="form-hint">Subjects within this percentage above target will trigger an "At Risk" warning.</span>
+                </div>
+
+                <button class="btn btn-primary" id="saveGlobalPreferencesBtn">
+                  <i data-lucide="save"></i>
+                  <span>Save Preferences</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Data Backup & Synchronization -->
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-title-wrap">
+                  <h3 class="card-title"><i data-lucide="database" class="icon-inline"></i> Backup & Data Portability</h3>
+                  <p class="card-subtitle">Safely export or import your records anytime</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="mb-md text-muted">All your attendance data is securely stored locally on your device in browser <code>localStorage</code>. No registration or cloud database required.</p>
+                
+                <div class="backup-actions-grid">
+                  <div class="backup-action-card">
+                    <h4>Export Backup</h4>
+                    <p class="text-sm text-muted">Download your complete attendance archive and activity logs as a structured JSON file.</p>
+                    <button class="btn btn-outline btn-sm w-100 mt-sm" id="exportDataBtn">
+                      <i data-lucide="download"></i>
+                      <span>Export JSON File</span>
+                    </button>
+                  </div>
+
+                  <div class="backup-action-card">
+                    <h4>Import Backup</h4>
+                    <p class="text-sm text-muted">Restore your attendance data from a previously exported JSON backup file.</p>
+                    <input type="file" id="importFileInput" accept=".json" class="d-none">
+                    <button class="btn btn-outline btn-sm w-100 mt-sm" id="triggerImportBtn">
+                      <i data-lucide="upload"></i>
+                      <span>Select JSON Backup</span>
+                    </button>
+                  </div>
+                </div>
+
+                <hr class="separator my-lg">
+
+                <div class="danger-zone-card">
+                  <div class="danger-zone-text">
+                    <h4 class="text-danger">Sample & Factory Reset</h4>
+                    <p class="text-sm text-muted">Load default prefilled subjects or completely purge all stored records from localStorage.</p>
+                  </div>
+                  <div class="danger-zone-buttons">
+                    <button class="btn btn-outline btn-sm" id="loadDemoDataBtn">
+                      <i data-lucide="sparkles"></i>
+                      <span>Reset to Sample Data</span>
+                    </button>
+                    <button class="btn btn-danger btn-sm" id="clearAllDataBtn">
+                      <i data-lucide="trash-2"></i>
+                      <span>Clear All Data</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div> <!-- /content-body -->
+    </main>
+  </div> <!-- /app-layout -->
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Add / Edit Subject Modal -->
+  <div class="modal-backdrop" id="subjectModal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="subjectModalTitle">Add New Subject</h3>
+        <button class="btn-icon modal-close-btn" id="closeSubjectModalBtn" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="subjectForm" novalidate>
+        <input type="hidden" id="editSubjectId">
+        <div class="modal-body">
+          <div class="form-group mb-md">
+            <label for="inputSubjectName" class="form-label">Subject Name <span class="text-danger">*</span></label>
+            <input type="text" id="inputSubjectName" class="form-control" placeholder="e.g. Data Structures & Algorithms" required>
+            <span class="form-error" id="errorSubjectName"></span>
+          </div>
+
+          <div class="form-group mb-md">
+            <label for="inputTeacherName" class="form-label">Instructor / Professor Name <span class="text-muted">(Optional)</span></label>
+            <input type="text" id="inputTeacherName" class="form-control" placeholder="e.g. Prof. Alan Turing">
+          </div>
+
+          <div class="form-row-2 mb-md">
+            <div class="form-group">
+              <label for="inputAttendedClasses" class="form-label">Classes Attended <span class="text-danger">*</span></label>
+              <input type="number" id="inputAttendedClasses" class="form-control" min="0" value="0" placeholder="0" required>
+              <span class="form-error" id="errorAttendedClasses"></span>
+            </div>
+            <div class="form-group">
+              <label for="inputTotalClasses" class="form-label">Total Classes Held <span class="text-danger">*</span></label>
+              <input type="number" id="inputTotalClasses" class="form-control" min="0" value="0" placeholder="0" required>
+              <span class="form-error" id="errorTotalClasses"></span>
+            </div>
+          </div>
+
+          <div class="form-group mb-md">
+            <div class="label-with-val">
+              <label for="inputTargetPercentage" class="form-label">Target Attendance Requirement</label>
+              <span class="val-pill" id="targetPercentageDisplay">75%</span>
+            </div>
+            <input type="range" id="inputTargetPercentage" class="slider-target" min="50" max="95" step="1" value="75">
+            <span class="form-hint">Default is 75%. You can specify custom rules per subject.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelSubjectModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveSubjectBtn">
+            <i data-lucide="check"></i>
+            <span>Save Subject</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manual Attendance Correction Modal -->
+  <div class="modal-backdrop" id="manualEditModal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Adjust Attendance Totals</h3>
+        <button class="btn-icon modal-close-btn" id="closeManualEditModalBtn" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="manualEditForm">
+        <input type="hidden" id="manualEditSubjectId">
+        <div class="modal-body">
+          <p class="text-muted mb-md" id="manualEditSubjectTitle">Updating: Data Structures</p>
+
+          <div class="form-row-2 mb-md">
+            <div class="form-group">
+              <label for="manualAttended" class="form-label">Attended Classes</label>
+              <input type="number" id="manualAttended" class="form-control" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="manualTotal" class="form-label">Total Classes</label>
+              <input type="number" id="manualTotal" class="form-control" min="0" required>
+            </div>
+          </div>
+          <span class="form-error" id="manualEditError"></span>
+          <span class="form-hint">Attended classes cannot exceed total classes.</span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelManualEditBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Totals</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Generic Confirmation Modal -->
+  <div class="modal-backdrop" id="confirmModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmModalTitle">Are you sure?</h3>
+        <button class="btn-icon modal-close-btn" id="closeConfirmModalBtn" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmModalMessage">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="confirmCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmAcceptBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Main JavaScript Application -->
+  <script src="script.js"></script>
+</body>
+</html>
