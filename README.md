@@ -18,12 +18,3 @@ A clean, modern web application for college students to track attendance and cal
 - Chart.js (CDN)
 - Lucide Icons (CDN)
 
-## How to Run Locally
-1. Download or clone this repository.
-2. Double click `index.html` to open it in any browser.
-
-## Deployment
-Deployable on **Vercel** as a static site:
-1. Go to [vercel.com](https://vercel.com).
-2. Import your GitHub repository or drag and drop this project folder.
-3. Click **Deploy**.
